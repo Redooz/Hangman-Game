@@ -9,6 +9,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.redoz.hangman.databinding.ActivityGameBinding
+import kotlin.random.Random
 
 class GameActivity : AppCompatActivity() {
     private lateinit var binding: ActivityGameBinding
@@ -35,9 +36,20 @@ class GameActivity : AppCompatActivity() {
 
     }
 
-    private fun loadLettersSpace(word: String) {
-        for (i in word.indices) {
+    private fun loadLettersAndSpaces(word: String) {
+        var counter = 0
+        var maxHelpers = word.length/3
+        var character = "_"
+
+        for (char in word) {
             val marginEnd = dpToPx(3.toFloat(), this)
+            var willHelp = Random.nextBoolean()
+
+            if (willHelp && counter < maxHelpers) {
+                character = char.toString()
+                counter++
+            }
+
             val textView = TextView(this).apply {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -47,19 +59,20 @@ class GameActivity : AppCompatActivity() {
                 }
                 layoutParams = this.layoutParams
                 typeface = Typeface.MONOSPACE
-                text = "_"
+                text = character
                 setTextColor(ContextCompat.getColor(context, R.color.black))
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 34f)
                 setTypeface(null, Typeface.BOLD)
             }
 
             binding.wordContainer.addView(textView)
+            character = "_"
         }
     }
 
     private fun changeHandmanImage() {
         if (changeImageCounter >= handmanImages.size) {
-            changeImageCounter = 0
+            changeImageCounter = -1
         }
 
         binding.imgHandman.setImageResource(handmanImages[changeImageCounter])
