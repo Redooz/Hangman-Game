@@ -12,6 +12,19 @@ import com.redoz.hangman.databinding.ActivityGameBinding
 
 class GameActivity : AppCompatActivity() {
     private lateinit var binding: ActivityGameBinding
+    private val handmanImages = listOf(
+        R.drawable.hangman1,
+        R.drawable.hangman2,
+        R.drawable.hangman3,
+        R.drawable.hangman4,
+        R.drawable.hangman5,
+        R.drawable.hangman6,
+        R.drawable.hangman7,
+        R.drawable.hangman8,
+        R.drawable.hangman9,
+        R.drawable.hangman10
+    )
+    private var changeImageCounter = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -19,6 +32,7 @@ class GameActivity : AppCompatActivity() {
         binding = ActivityGameBinding.inflate(layoutInflater)
 
         setContentView(binding.root)
+
     }
 
     private fun loadLettersSpace(word: String) {
@@ -43,8 +57,21 @@ class GameActivity : AppCompatActivity() {
         }
     }
 
+    private fun changeHandmanImage() {
+        if (changeImageCounter >= handmanImages.size) {
+            changeImageCounter = 0
+        }
+
+        binding.imgHandman.setImageResource(handmanImages[changeImageCounter])
+    }
+
+
     private fun dpToPx(dp: Float, context: Context): Int {
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.resources.displayMetrics)
+        return TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            dp,
+            context.resources.displayMetrics
+        )
             .toInt()
     }
 
