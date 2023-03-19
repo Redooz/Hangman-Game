@@ -1,12 +1,16 @@
 package com.redoz.hangman
 
+import android.app.Dialog
 import android.content.Context
 import android.graphics.Typeface
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.TypedValue
+import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.redoz.hangman.databinding.ActivityGameBinding
 import kotlin.random.Random
@@ -27,7 +31,7 @@ class GameActivity : AppCompatActivity() {
         R.drawable.hangman10
     )
     private var changeImageCounter = 0
-    val sports = listOf(
+    private val sports = listOf(
         "swimming", "cycling", "tennis", "boxing", "shooting", "judo", "golf",
         "basketball", "football", "volleyball", "baseball", "triathalon",
         "snowboarding", "hockey", "gymnastics", "bowling", "athletics",
@@ -35,6 +39,7 @@ class GameActivity : AppCompatActivity() {
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        changeImageCounter = 0
         super.onCreate(savedInstanceState)
 
         binding = ActivityGameBinding.inflate(layoutInflater)
@@ -46,14 +51,26 @@ class GameActivity : AppCompatActivity() {
 
         loadLettersAndSpaces(word)
 
-        binding.sendBtn.setOnClickListener {
-            val letter = binding.letterEditTxt.text.toString().trim()
-            if (letter.isNotEmpty()) {
-                findLetterOnWord(letter[0], word)
-                binding.letterEditTxt.text.clear()
-            }
-        }
+        binding.sendBtn.setOnClickListener { game(word) }
     }
+
+    private fun game(word: String) {
+        val letter = binding.letterEditTxt.text.toString().trim()
+        if (letter.isNotEmpty()) {
+            findLetterOnWord(letter[0], word)
+            binding.letterEditTxt.text.clear()
+        }
+
+        if (changeImageCounter >= 10) {
+            showGameResultDialog("You Lost, the word was $word")
+        }
+
+        if (allLettersFound(word)) {
+            showGameResultDialog("You Won")
+        }
+
+    }
+
 
     private fun findLetterOnWord(letter: Char, word: String) {
         var found = false
@@ -68,6 +85,37 @@ class GameActivity : AppCompatActivity() {
             changeHandmanImage()
             changeImageCounter++
         }
+
+    }
+
+    private fun allLettersFound(word: String): Boolean{
+        var allLettersFound = true
+        for (i in word.indices) {
+            val textView = lettersMap[i]
+            if (textView?.text.toString() != word[i].toString()) {
+                allLettersFound = false
+                break
+            }
+        }
+
+        return allLettersFound
+    }
+
+    private fun showGameResultDialog(message: String) {
+        val dialog = Dialog(this)
+        dialog.setContentView(R.layout.dialog_game_result)
+
+        val tvResultMessage = dialog.findViewById<TextView>(R.id.tv_result_message)
+        val btnCloseDialog = dialog.findViewById<Button>(R.id.btn_close_dialog)
+
+        tvResultMessage.text = message
+
+        btnCloseDialog.setOnClickListener {
+            dialog.dismiss()
+            finish() // Close the activity after the dialog is dismissed
+        }
+
+        dialog.show()
     }
 
     private fun loadFoundLetter(letter: Char, index: Int) {
@@ -118,7 +166,6 @@ class GameActivity : AppCompatActivity() {
 
         binding.imgHandman.setImageResource(handmanImages[changeImageCounter])
     }
-
 
     private fun dpToPx(dp: Float, context: Context): Int {
         return TypedValue.applyDimension(
