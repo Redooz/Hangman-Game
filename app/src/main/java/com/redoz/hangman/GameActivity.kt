@@ -1,16 +1,14 @@
 package com.redoz.hangman
 
-import android.app.Dialog
+import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Typeface
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.TypedValue
-import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.redoz.hangman.databinding.ActivityGameBinding
 import kotlin.random.Random
@@ -31,6 +29,8 @@ class GameActivity : AppCompatActivity() {
         R.drawable.hangman10
     )
     private var changeImageCounter = 0
+    private var remainingTimeInMillis: Long = 60000 // 10 seconds
+    private lateinit var countDownTimer: CountDownTimer
     private val sports = listOf(
         "swimming", "cycling", "tennis", "boxing", "shooting", "judo", "golf",
         "basketball", "football", "volleyball", "baseball", "triathalon",
@@ -38,7 +38,7 @@ class GameActivity : AppCompatActivity() {
         "weightlifting", "archery", "badminton", "diving", "cricket"
     )
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) = try {
         changeImageCounter = 0
         super.onCreate(savedInstanceState)
 
@@ -52,6 +52,27 @@ class GameActivity : AppCompatActivity() {
         loadLettersAndSpaces(word)
 
         binding.sendBtn.setOnClickListener { game(word) }
+
+        countDownTimer = object : CountDownTimer(remainingTimeInMillis, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                remainingTimeInMillis = millisUntilFinished
+                binding.timeTxtView.text = formatTime(remainingTimeInMillis)
+            }
+
+            override fun onFinish() {
+                // Timer has finished
+                showGameResultDialog("You Lost", "Time's up!")
+                binding.timeTxtView.text = "Time's up!"
+
+            }
+        }.start()
+    } catch (ex: Exception) {
+        error(ex)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        countDownTimer?.cancel()
     }
 
     private fun game(word: String) {
@@ -62,15 +83,21 @@ class GameActivity : AppCompatActivity() {
         }
 
         if (changeImageCounter >= 10) {
-            showGameResultDialog("You Lost, the word was $word")
+            showGameResultDialog("You Lost", "The word was: $word")
+            binding.timeTxtView.text = "00:00"
         }
 
         if (allLettersFound(word)) {
-            showGameResultDialog("You Won")
+            showGameResultDialog("You Won","Congratulations!")
         }
 
     }
 
+    private fun formatTime(millis: Long): String {
+        val minutes = millis / 1000 / 60
+        val seconds = millis / 1000 % 60
+        return String.format("%02d:%02d", minutes, seconds)
+    }
 
     private fun findLetterOnWord(letter: Char, word: String) {
         var found = false
@@ -101,21 +128,16 @@ class GameActivity : AppCompatActivity() {
         return allLettersFound
     }
 
-    private fun showGameResultDialog(message: String) {
-        val dialog = Dialog(this)
-        dialog.setContentView(R.layout.dialog_game_result)
-
-        val tvResultMessage = dialog.findViewById<TextView>(R.id.tv_result_message)
-        val btnCloseDialog = dialog.findViewById<Button>(R.id.btn_close_dialog)
-
-        tvResultMessage.text = message
-
-        btnCloseDialog.setOnClickListener {
+    private fun showGameResultDialog(title:String, message: String) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(title)
+        builder.setMessage(message)
+        builder.setPositiveButton("OK") { dialog, which ->
             dialog.dismiss()
-            finish() // Close the activity after the dialog is dismissed
+            finish()
         }
-
-        dialog.show()
+        builder.setCancelable(false)
+        builder.show()
     }
 
     private fun loadFoundLetter(letter: Char, index: Int) {
