@@ -6,6 +6,7 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.util.TypedValue
+import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -29,13 +30,26 @@ class GameActivity : AppCompatActivity() {
         R.drawable.hangman10
     )
     private var changeImageCounter = 0
-    private var remainingTimeInMillis: Long = 60000 // 10 seconds
+    private var remainingTimeInMillis: Long = 90000 // default 90 secs
     private lateinit var countDownTimer: CountDownTimer
     private val sports = listOf(
         "swimming", "cycling", "tennis", "boxing", "shooting", "judo", "golf",
         "basketball", "football", "volleyball", "baseball", "triathalon",
         "snowboarding", "hockey", "gymnastics", "bowling", "athletics",
         "weightlifting", "archery", "badminton", "diving", "cricket"
+    )
+    private val carBrands = listOf(
+        "tesla",
+        "bmw",
+        "volvo",
+        "audi",
+        "porsche",
+        "lexus",
+        "lamborghini",
+        "ferrari",
+        "cadillac",
+        "jaguar",
+        "bugatti"
     )
 
     override fun onCreate(savedInstanceState: Bundle?) = try {
@@ -47,11 +61,38 @@ class GameActivity : AppCompatActivity() {
         setContentView(binding.root)
         lettersMap = mutableMapOf()
 
-        val word = sports[Random.nextInt(0,sports.size)]
+        val selectedDifficulty = intent.getStringExtra("selectedDifficulty")
+
+        remainingTimeInMillis = when(selectedDifficulty?.lowercase()?.trim()) {
+            "easy" -> 90000
+            "medium" -> 60000
+            "hard" -> 40000
+            else -> {
+                90000
+            }
+        }
+
+        var word:String
+        val selectedCategory = intent.getStringExtra("selectedCategory")
+        word = if (selectedCategory?.lowercase()?.trim() == "sports") {
+            sports[Random.nextInt(0, sports.size)]
+        } else {
+            carBrands[Random.nextInt(0, carBrands.size)]
+        }
 
         loadLettersAndSpaces(word)
 
         binding.sendBtn.setOnClickListener { game(word) }
+        binding.letterEditTxt.setOnEditorActionListener{ _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEND) {
+                game(word)
+                true
+            } else {
+                false
+            }
+
+        }
+
 
         countDownTimer = object : CountDownTimer(remainingTimeInMillis, 1000) {
             override fun onTick(millisUntilFinished: Long) {
@@ -61,7 +102,7 @@ class GameActivity : AppCompatActivity() {
 
             override fun onFinish() {
                 // Timer has finished
-                showGameResultDialog("You Lost", "Time's up!")
+                showGameResultDialog("You Lost", "Time's up!\nThe word was $word")
                 binding.timeTxtView.text = "Time's up!"
 
             }
@@ -85,10 +126,12 @@ class GameActivity : AppCompatActivity() {
         if (changeImageCounter >= 10) {
             showGameResultDialog("You Lost", "The word was: $word")
             binding.timeTxtView.text = "00:00"
+            countDownTimer.cancel()
         }
 
         if (allLettersFound(word)) {
-            showGameResultDialog("You Won","Congratulations!")
+            showGameResultDialog("You Won", "Congratulations!")
+            countDownTimer.cancel()
         }
 
     }
@@ -115,7 +158,7 @@ class GameActivity : AppCompatActivity() {
 
     }
 
-    private fun allLettersFound(word: String): Boolean{
+    private fun allLettersFound(word: String): Boolean {
         var allLettersFound = true
         for (i in word.indices) {
             val textView = lettersMap[i]
@@ -128,7 +171,7 @@ class GameActivity : AppCompatActivity() {
         return allLettersFound
     }
 
-    private fun showGameResultDialog(title:String, message: String) {
+    private fun showGameResultDialog(title: String, message: String) {
         val builder = AlertDialog.Builder(this)
         builder.setTitle(title)
         builder.setMessage(message)
@@ -147,7 +190,7 @@ class GameActivity : AppCompatActivity() {
 
     private fun loadLettersAndSpaces(word: String) {
         var counter = 0
-        var maxHelpers = word.length/3
+        var maxHelpers = word.length / 3
         var character = "_"
 
         for (i in word.indices) {

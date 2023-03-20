@@ -73,6 +73,7 @@
             android:textColor="@color/black"
             android:textColorHint="@color/black"
             android:maxLength="1"
+            android:imeOptions="actionSend"
             >
 
         </EditText>
